@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"os"
 	"url_shortener/internal/config"
+	"url_shortener/internal/httpsrv/handlers/redirect"
 	"url_shortener/internal/httpsrv/handlers/url/save"
-	"url_shortener/internal/httpsrv/middleware/logger"
+	mwLogger "url_shortener/internal/httpsrv/middleware/logger"
 	"url_shortener/internal/lib/logger/handlers/slogpretty"
 	"url_shortener/internal/lib/logger/sl"
 	"url_shortener/internal/storage/sqlite"
@@ -33,11 +34,12 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
-	router.Use(logger.New(log))
+	router.Use(mwLogger.New(log))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
 	router.Post("/url", save.New(log, storage))
+	router.Get("/{alias}", redirect.New(log, storage))
 
 	log.Info("starting service", slog.String("address", cfg.Address))
 
